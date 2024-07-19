@@ -1,6 +1,9 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 class Book {
     String title;
@@ -13,7 +16,7 @@ class Book {
 
     @Override
     public String toString() {
-        return title + "," + author;
+        return title + " by " + author;
     }
 }
 
@@ -23,83 +26,104 @@ public class LibraryManagementSystem {
 
     public static void main(String[] args) {
         loadBooks();
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.println("Library Management System");
-            System.out.println("1. Add Book");
-            System.out.println("2. View Books");
-            System.out.println("3. Search Book");
-            System.out.println("4. Delete Book");
-            System.out.println("5. Update Book");
-            System.out.println("6. Exit");
-            System.out.print("Choose an option: ");
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+        SwingUtilities.invokeLater(LibraryManagementSystem::createAndShowGUI);
+    }
 
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter book title: ");
-                    String title = scanner.nextLine();
-                    System.out.print("Enter book author: ");
-                    String author = scanner.nextLine();
-                    books.add(new Book(title, author));
-                    saveBooks();
-                    System.out.println("Book added successfully.");
-                    break;
-                case 2:
-                    System.out.println("Available Books:");
-                    for (Book book : books) {
-                        System.out.println(book);
-                    }
-                    break;
-                case 3:
-                    System.out.print("Enter book title to search: ");
-                    String searchTitle = scanner.nextLine();
-                    for (Book book : books) {
-                        if (book.title.equalsIgnoreCase(searchTitle)) {
-                            System.out.println(book);
-                        }
-                    }
-                    break;
-                case 4:
-                    System.out.print("Enter book title to delete: ");
-                    String deleteTitle = scanner.nextLine();
-                    books.removeIf(book -> book.title.equalsIgnoreCase(deleteTitle));
-                    saveBooks();
-                    System.out.println("Book deleted successfully.");
-                    break;
-                case 5:
-                    System.out.print("Enter book title to update: ");
-                    String oldTitle = scanner.nextLine();
-                    for (Book book : books) {
-                        if (book.title.equalsIgnoreCase(oldTitle)) {
-                            System.out.print("Enter new title: ");
-                            String newTitle = scanner.nextLine();
-                            System.out.print("Enter new author: ");
-                            String newAuthor = scanner.nextLine();
-                            book.title = newTitle;
-                            book.author = newAuthor;
-                            saveBooks();
-                            System.out.println("Book updated successfully.");
-                            break;
-                        }
-                    }
-                    break;
-                case 6:
-                    System.out.println("Exiting...");
-                    scanner.close();
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
+    private static void createAndShowGUI() {
+        JFrame frame = new JFrame("Library Management System");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(500, 400);
+        frame.setLayout(new BorderLayout());
+
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(5, 2));
+
+        JTextField titleField = new JTextField();
+        JTextField authorField = new JTextField();
+
+        panel.add(new JLabel("Title:"));
+        panel.add(titleField);
+        panel.add(new JLabel("Author:"));
+        panel.add(authorField);
+
+        JButton addButton = new JButton("Add Book");
+        JButton viewButton = new JButton("View Books");
+        JButton deleteButton = new JButton("Delete Book");
+        JButton updateButton = new JButton("Update Book");
+
+        panel.add(addButton);
+        panel.add(viewButton);
+        panel.add(deleteButton);
+        panel.add(updateButton);
+
+        frame.add(panel, BorderLayout.NORTH);
+        frame.add(scrollPane, BorderLayout.CENTER);
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String title = titleField.getText();
+                String author = authorField.getText();
+                books.add(new Book(title, author));
+                saveBooks();
+                titleField.setText("");
+                authorField.setText("");
+                JOptionPane.showMessageDialog(frame, "Book added successfully.");
             }
-        }
+        });
+
+        viewButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.setText("");
+                for (Book book : books) {
+                    textArea.append(book + "\n");
+                }
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String title = titleField.getText();
+                books.removeIf(book -> book.title.equalsIgnoreCase(title));
+                saveBooks();
+                titleField.setText("");
+                JOptionPane.showMessageDialog(frame, "Book deleted successfully.");
+            }
+        });
+
+        updateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String oldTitle = titleField.getText();
+                for (Book book : books) {
+                    if (book.title.equalsIgnoreCase(oldTitle)) {
+                        String newTitle = JOptionPane.showInputDialog("Enter new title:");
+                        String newAuthor = JOptionPane.showInputDialog("Enter new author:");
+                        book.title = newTitle;
+                        book.author = newAuthor;
+                        saveBooks();
+                        titleField.setText("");
+                        JOptionPane.showMessageDialog(frame, "Book updated successfully.");
+                        break;
+                    }
+                }
+            }
+        });
+
+        frame.setVisible(true);
     }
 
     private static void loadBooks() {
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
+                String[] parts = line.split(" by ");
                 if (parts.length == 2) {
                     books.add(new Book(parts[0], parts[1]));
                 }
